@@ -8,9 +8,17 @@ DB_FILE = "sent_news.json"
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
 
 def load_sent_ids():
+    """Безопасная загрузка ID отправленных новостей с защитой от пустых файлов"""
     if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r", encoding="utf-8") as f:
-            return set(json.load(f))
+        try:
+            with open(DB_FILE, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if not content:
+                    return set()
+                return set(json.loads(content))
+        except json.JSONDecodeError:
+            print(f"Предупреждение: Файл {DB_FILE} поврежден или пуст. Создаем новую базу.")
+            return set()
     return set()
 
 def save_sent_ids(sent_ids):
@@ -30,7 +38,6 @@ def parse_orbit_games(sent_ids):
             return new_items
             
         soup = BeautifulSoup(res.text, "lxml")
-        # Ищем статьи на WordPress-сайте Orbit Games
         articles = soup.find_all("article")
         
         for article in articles:
@@ -56,7 +63,7 @@ def parse_orbit_games(sent_ids):
     except Exception as e:
         print(f"[Orbit] Ошибка парсинга: {e}")
         
-    return new_items[::-1] # От старых к новым
+    return new_items[::-1]
 
 def parse_pearl_abyss(sent_ids):
     """Парсинг официального сайта Pearl Abyss Global Lab Notice"""
@@ -71,10 +78,8 @@ def parse_pearl_abyss(sent_ids):
             return new_items
             
         soup = BeautifulSoup(res.text, "lxml")
-        # Находим контейнер со списком новостей
         list_container = soup.find("div", class_="board_list_block") or soup.find("ul", class_="news_list")
         if not list_container:
-            # Альтернативный поиск по ссылкам новостей
             links = soup.find_all("a", href=True)
         else:
             links = list_container.find_all("a", href=True)
@@ -85,11 +90,9 @@ def parse_pearl_abyss(sent_ids):
                 if not link.startswith("http"):
                     link = "https://blackdesert.pearlabyss.com" + link
                 
-                # Ищем текст заголовка внутри ссылки или в дочерних элементах
                 title_tag = a_tag.find("span", class_="title") or a_tag.find("p", class_="title")
                 title = title_tag.text.strip() if title_tag else a_tag.text.strip()
                 
-                # Избавляемся от лишних дублей строк в названии
                 title = " ".join(title.split())
                 if not title:
                     continue
@@ -100,12 +103,11 @@ def parse_pearl_abyss(sent_ids):
                         "link": link,
                         "guid": link,
                         "source": "Pearl Abyss (Официальный Lab)",
-                        "color": 2424832 # Красный/Темный цвет блэк дезерта
+                        "color": 2424832 # Темно-красный цвет
                     })
     except Exception as e:
         print(f"[Pearl Abyss] Ошибка парсинга: {e}")
         
-    # Удаляем дубликаты, если одна и та же ссылка встретилась на странице дважды
     seen = set()
     unique_items = []
     for item in new_items[::-1]:
