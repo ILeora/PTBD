@@ -1,15 +1,15 @@
-name: News Parser Bot
+name: BDO News Parser
 
 on:
   repository_dispatch:
-    types: [trigger-news-parser] # Ждем сигнал от cron-job.org
-  workflow_dispatch: # Позволит запускать бота вручную кнопкой на GitHub
+    types: [trigger-news-parser]
+  workflow_dispatch:
 
 jobs:
   run-parser:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Разрешаем гитхабу сохранять историю отправленного
+      contents: write
 
     steps:
     - name: Checkout repository
@@ -27,14 +27,15 @@ jobs:
 
     - name: Run script
       env:
-        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }} # Достаем скрытую ссылку на Дискорд
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       run: python bot.py
 
     - name: Commit and push if database changed
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        # Создаем пустой файл базы данных, если его еще нет
+        touch sent_news.json
         git add sent_news.json
-        # Коммитим только если есть изменения, чтобы не вызывать ошибку
-        git diff-index --quiet HEAD || git commit -m "chore: update sent news database [skip ci]"
+        git diff-index --quiet HEAD || git commit -m "chore: update sent BDO news database [skip ci]"
         git push
