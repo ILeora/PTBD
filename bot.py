@@ -26,15 +26,26 @@ def save_sent_ids(sent_ids):
         json.dump(list(sent_ids), f, ensure_ascii=False, indent=4)
 
 def parse_orbit_games(sent_ids):
-    """Парсинг сайта Orbit Games (раздел Black Desert Global Lab)"""
+    """Парсинг сайта Orbit Games с усиленной маскировкой от блокировок"""
     url = "https://orbit-games.com/category/black-desert/global-lab/"
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    
+    # Расширенные заголовки, чтобы прикинуться реальным браузером Chrome
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
+    }
     new_items = []
     
     try:
-        res = requests.get(url, headers=headers, timeout=15)
+        # Используем сессию для стабильности соединения
+        session = requests.Session()
+        res = session.get(url, headers=headers, timeout=15)
+        
         if res.status_code != 200:
-            print(f"[Orbit] Ошибка загрузки страницы: {res.status_code}")
+            print(f"[Orbit] Сайт вернул код ошибки: {res.status_code}")
             return new_items
             
         soup = BeautifulSoup(res.text, "lxml")
@@ -61,7 +72,7 @@ def parse_orbit_games(sent_ids):
                     "color": 16744192 # Оранжевый цвет
                 })
     except Exception as e:
-        print(f"[Orbit] Ошибка парсинга: {e}")
+        print(f"[Orbit] Запрос заблокирован или недоступен: {e}")
         
     return new_items[::-1]
 
