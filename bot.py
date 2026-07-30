@@ -88,13 +88,13 @@ def parse_orbit_games(sent_ids):
 
 def parse_pearl_abyss(sent_ids):
     """
-    Парсинг ТОЛЬКО крупных патчей (ID >= 19000) с официального сайта Pearl Abyss.
-    Мелкие новости и объявления о безопасности (ID 13000-13393) игнорируются.
+    Парсинг ТОЛЬКО крупных патчей с официального сайта Pearl Abyss.
+    Фильтрация по названию: только новости с "업데이트 안내" в названии.
     """
     url = "https://blackdesert.pearlabyss.com/GlobalLab/en-US/News/Notice?_categoryNo=2"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     new_items = []
-    seen_links = set()  # Для отслеживания уже найденных ссылок
+    seen_links = set()
     
     try:
         res = requests.get(url, headers=headers, timeout=15)
@@ -104,28 +104,35 @@ def parse_pearl_abyss(sent_ids):
             
         soup = BeautifulSoup(res.text, "lxml")
         
-        # Находим все ссылки на детальные страницы новостей
-        all_links = soup.find_all("a", href=True)
+        # Находим все элементы с новостями в списке
+        board_items = soup.find_all("li", class_="board_item")
         
-        for a_tag in all_links:
+        if not board_items:
+            # Если не нашли по классу, ищем все ссылки с Detail?
+            all_links = soup.find_all("a", href=True)
+            temp_items = []
+            for a_tag in all_links:
+                href = a_tag.get("href", "")
+                if "Detail?" not in href:
+                    continue
+                # Находим родительский контейнер
+                parent = a_tag.find_parent("li") or a_tag.find_parent("div")
+                if parent:
+                    temp_items.append(parent)
+            board_items = temp_items
+        
+        for item in board_items:
+            # Находим ссылку
+            a_tag = item.find("a", href=True)
+            if not a_tag:
+                continue
+                
             href = a_tag.get("href", "")
             if "Detail?" not in href:
                 continue
             
-            # Получаем ID новости из URL
+            # Получаем ID новости
             board_no = href.split("_boardNo=")[-1].split("&")[0]
-            
-            try:
-                board_id = int(board_no)
-            except ValueError:
-                print(f"[Pearl Abyss] ⚠️ Не удалось распарсить ID: {board_no}")
-                continue
-            
-            # Фильтр: Только ID >= 19000 (крупные патчи)
-            if board_id < 19000:
-                if board_id >= 13000:
-                    print(f"[Pearl Abyss] ⏭️ Пропущена мелкая новость (ID {board_id})")
-                continue
             
             # Формируем полную ссылку
             if not href.startswith("http"):
@@ -133,16 +140,17 @@ def parse_pearl_abyss(sent_ids):
             else:
                 link = href
             
-            # Проверяем, не обрабатывали ли уже эту ссылку
+            # Проверяем дубликаты
             if link in seen_links:
                 continue
             seen_links.add(link)
             
-            # Находим заголовок новости
-            title_tag = a_tag.find("span", class_="title") or a_tag.find("p", class_="title")
+            # Находим заголовок
+            title_tag = item.find("span", class_="title") or item.find("p", class_="title") or item.find("h3")
             if title_tag:
                 title = title_tag.text.strip()
             else:
+                # Если не нашли, берем текст всей ссылки
                 title = a_tag.text.strip()
             
             title = " ".join(title.split())
@@ -150,28 +158,26 @@ def parse_pearl_abyss(sent_ids):
             if not title:
                 continue
             
-            # Если новость прошла фильтр по ID - добавляем
-            if link not in sent_ids:
-                new_items.append({
-                    "title": title,
-                    "link": link,
-                    "guid": link,
-                    "desc": f"🇰🇷 Крупное обновление Global Lab (ID: {board_id})"
-                })
-                print(f"[Pearl Abyss] ✅ НОВЫЙ КРУПНЫЙ ПАТЧ: {title} (ID: {board_id})")
+            # 🔥 ОСНОВНОЙ ФИЛЬТР: проверяем название
+            # Крупные патчи содержат "업데이트 안내" и НЕ содержат "보안" (безопасность)
+            if "업데이트 안내" in title and "보안" not in title:
+                if link not in sent_ids:
+                    new_items.append({
+                        "title": title,
+                        "link": link,
+                        "guid": link,
+                        "desc": f"🇰🇷 Крупное обновление Global Lab (ID: {board_no})"
+                    })
+                    print(f"[Pearl Abyss] ✅ НОВЫЙ КРУПНЫЙ ПАТЧ: {title} (ID: {board_no})")
+            else:
+                # Для отладки показываем, что пропустили
+                if "업데이트" in title:
+                    print(f"[Pearl Abyss] ⏭️ Пропущена (не \"업데이트 안내\"): {title[:40]}... (ID: {board_no})")
                 
     except Exception as e:
         print(f"[Pearl Abyss] Ошибка парсинга: {e}")
     
-    # Удаляем дубликаты (на всякий случай)
-    seen = set()
-    unique_items = []
-    for item in new_items[::-1]:
-        if item["guid"] not in seen:
-            seen.add(item["guid"])
-            unique_items.append(item)
-            
-    return unique_items
+    return new_items
 
 def send_to_discord(item):
     """Отправка сообщения через Components V2 с контейнером и двумя разделителями"""
