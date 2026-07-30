@@ -166,7 +166,7 @@ def parse_pearl_abyss(sent_ids):
                         "title": title,
                         "link": link,
                         "guid": link,
-                        "desc": f"🇰🇷 Крупное обновление Global Lab (ID: {board_no})"
+                        "desc": f"🇰🇷 Крупное обновление"
                     })
                     print(f"[Pearl Abyss] ✅ НОВЫЙ КРУПНЫЙ ПАТЧ: {title} (ID: {board_no})")
             else:
