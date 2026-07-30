@@ -27,12 +27,26 @@ def save_sent_ids(sent_ids):
         json.dump(list(sent_ids), f, ensure_ascii=False, indent=4)
 
 def parse_orbit_games(sent_ids):
-    """Парсинг сайта Orbit Games с обходом Cloudflare"""
+    """Парсинг сайта Orbit Games с полным набором заголовков и обходом Cloudflare"""
     url = "https://orbit-games.com/category/black-desert/global-lab/"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Cache-Control": "max-age=0"
+    }
     new_items = []
     
     try:
-        res = cffi_requests.get(url, impersonate="chrome120", timeout=30)
+        # Передаем заголовки вместе с эмуляцией отпечатка Chrome 120/122
+        res = cffi_requests.get(url, headers=headers, impersonate="chrome120", timeout=30)
         
         if res.status_code != 200:
             print(f"[Orbit] Сайт вернул код ошибки: {res.status_code}")
