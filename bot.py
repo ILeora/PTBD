@@ -27,13 +27,12 @@ def save_sent_ids(sent_ids):
         json.dump(list(sent_ids), f, ensure_ascii=False, indent=4)
 
 def parse_orbit_games(sent_ids):
-    """Парсинг сайта Orbit Games с обходом Cloudflare через эмуляцию TLS-отпечатка"""
+    """Парсинг сайта Orbit Games с увеличенным таймаутом"""
     url = "https://orbit-games.com/category/black-desert/global-lab/"
     new_items = []
     
     try:
-        # Используем curl_cffi с имитацией браузера Chrome для обхода защиты
-        res = cffi_requests.get(url, impersonate="chrome120", timeout=15)
+        res = cffi_requests.get(url, impersonate="chrome120", timeout=30)
         
         if res.status_code != 200:
             print(f"[Orbit] Сайт вернул код ошибки: {res.status_code}")
@@ -121,9 +120,8 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка через контейнеры Discord с обходом проверки пустого сообщения"""
+    """Отправка через контейнеры Discord без запрещенного поля content"""
     payload = {
-        "content": "\u200b",  # Невидимый символ обходит ошибку пустого сообщения
         "flags": 32768,
         "components": [
             {
