@@ -87,7 +87,7 @@ def parse_orbit_games(sent_ids):
     return new_items[::-1]
 
 def parse_pearl_abyss(sent_ids):
-    """Парсинг официального сайта Pearl Abyss Global Lab Notice (без Global Lab в описании)"""
+    """Парсинг только основных обновлений ([Updates]) с официального сайта Pearl Abyss"""
     url = "https://blackdesert.pearlabyss.com/GlobalLab/en-US/News/Notice?_categoryNo=2"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     new_items = []
@@ -118,8 +118,9 @@ def parse_pearl_abyss(sent_ids):
                 if not title:
                     continue
                 
+                # Пропускаем всё, что не является основными патчами [Updates]
                 if not title.startswith("[Updates]"):
-                    title = f"[Updates] {title}"
+                    continue
                 
                 if link not in sent_ids:
                     new_items.append({
