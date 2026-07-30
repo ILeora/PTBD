@@ -94,6 +94,7 @@ def parse_pearl_abyss(sent_ids):
     url = "https://blackdesert.pearlabyss.com/GlobalLab/en-US/News/Notice?_categoryNo=2"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     new_items = []
+    seen_links = set()  # Для отслеживания уже найденных ссылок
     
     try:
         res = requests.get(url, headers=headers, timeout=15)
@@ -120,9 +121,8 @@ def parse_pearl_abyss(sent_ids):
                 print(f"[Pearl Abyss] ⚠️ Не удалось распарсить ID: {board_no}")
                 continue
             
-            # 🔥 ОСНОВНОЙ ФИЛЬТР: Только ID >= 19000 (крупные патчи)
+            # Фильтр: Только ID >= 19000 (крупные патчи)
             if board_id < 19000:
-                # Для отладки показываем, что пропустили
                 if board_id >= 13000:
                     print(f"[Pearl Abyss] ⏭️ Пропущена мелкая новость (ID {board_id})")
                 continue
@@ -132,6 +132,11 @@ def parse_pearl_abyss(sent_ids):
                 link = "https://blackdesert.pearlabyss.com" + href
             else:
                 link = href
+            
+            # Проверяем, не обрабатывали ли уже эту ссылку
+            if link in seen_links:
+                continue
+            seen_links.add(link)
             
             # Находим заголовок новости
             title_tag = a_tag.find("span", class_="title") or a_tag.find("p", class_="title")
@@ -158,7 +163,7 @@ def parse_pearl_abyss(sent_ids):
     except Exception as e:
         print(f"[Pearl Abyss] Ошибка парсинга: {e}")
     
-    # Удаляем дубликаты и возвращаем в правильном порядке
+    # Удаляем дубликаты (на всякий случай)
     seen = set()
     unique_items = []
     for item in new_items[::-1]:
