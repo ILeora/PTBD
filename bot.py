@@ -27,7 +27,7 @@ def save_sent_ids(sent_ids):
         json.dump(list(sent_ids), f, ensure_ascii=False, indent=4)
 
 def parse_orbit_games(sent_ids):
-    """Парсинг сайта Orbit Games с полным набором заголовков и обходом Cloudflare"""
+    """Парсинг сайта Orbit Games с защитой от тайм-аутов и повторными попытками"""
     url = "https://orbit-games.com/category/black-desert/global-lab/"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -44,38 +44,46 @@ def parse_orbit_games(sent_ids):
     }
     new_items = []
     
-    try:
-        # Передаем заголовки вместе с эмуляцией отпечатка Chrome 120/122
-        res = cffi_requests.get(url, headers=headers, impersonate="chrome120", timeout=30)
-        
-        if res.status_code != 200:
-            print(f"[Orbit] Сайт вернул код ошибки: {res.status_code}")
-            return new_items
+    # До 3 попыток запроса на случай временных лагов Cloudflare/хостинга
+    for attempt in range(1, 4):
+        try:
+            res = cffi_requests.get(url, headers=headers, impersonate="chrome120", timeout=30)
             
-        soup = BeautifulSoup(res.text, "lxml")
-        articles = soup.find_all("article")
-        
-        for article in articles:
-            header_tag = article.find("h2") or article.find("h1")
-            if not header_tag:
-                continue
-            
-            a_tag = header_tag.find("a")
-            if not a_tag:
+            if res.status_code != 200:
+                print(f"[Orbit] Сайт вернул код ошибки: {res.status_code} (попытка {attempt}/3)")
+                time.sleep(3)
                 continue
                 
-            title = a_tag.text.strip()
-            link = a_tag["href"]
+            soup = BeautifulSoup(res.text, "lxml")
+            articles = soup.find_all("article")
             
-            if link not in sent_ids:
-                new_items.append({
-                    "title": title,
-                    "link": link,
-                    "guid": link,
-                    "desc": "🇰🇷 Перевод от \"Орбита игр\""
-                })
-    except Exception as e:
-        print(f"[Orbit] Запрос заблокирован или недоступен: {e}")
+            for article in articles:
+                header_tag = article.find("h2") or article.find("h1")
+                if not header_tag:
+                    continue
+                
+                a_tag = header_tag.find("a")
+                if not a_tag:
+                    continue
+                    
+                title = a_tag.text.strip()
+                link = a_tag["href"]
+                
+                if link not in sent_ids:
+                    new_items.append({
+                        "title": title,
+                        "link": link,
+                        "guid": link,
+                        "desc": "🇰🇷 Перевод от \"Орбита игр\""
+                    })
+            break
+            
+        except Exception as e:
+            print(f"[Orbit] Ошибка на попытке {attempt}/3: {e}")
+            if attempt < 3:
+                time.sleep(5)
+            else:
+                print("[Orbit] Не удалось получить ответ после 3 попыток, пропускаем.")
         
     return new_items[::-1]
 
@@ -134,7 +142,7 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка сообщения через Components V2 с двумя разделителями"""
+    """Отправка сообщения через Components V2 с контейнером и двумя разделителями"""
     webhook_url_v2 = f"{DISCORD_WEBHOOK_URL}?with_components=true"
     
     payload = {
