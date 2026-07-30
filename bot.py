@@ -65,7 +65,7 @@ def parse_orbit_games(sent_ids):
                     "title": title,
                     "link": link,
                     "guid": link,
-                    "desc": "🇰🇷 Перевод от \"Орбита игр\""
+                    "desc": "🇰🇷    Перевод от \"Орбита игр\""
                 })
     except Exception as e:
         print(f"[Orbit] Запрос заблокирован или недоступен: {e}")
@@ -112,7 +112,7 @@ def parse_pearl_abyss(sent_ids):
                         "title": title,
                         "link": link,
                         "guid": link,
-                        "desc": "🇰🇷 Вышло обновление"
+                        "desc": "🇰🇷    Вышло обновление"
                     })
     except Exception as e:
         print(f"[Pearl Abyss] Ошибка парсинга: {e}")
@@ -127,23 +127,32 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка сообщения: разделитель сверху, текст с флагом, разделитель снизу, жирная ссылка"""
+    """Отправка через контейнеры Discord (тип 17) с физическими разделителями (тип 14)"""
     payload = {
-        "embeds": [{
-            "color": 16744192,  # Оранжевая полоска слева
-            "fields": [
-                {
-                    "name": "\u200b",     # Первый разделитель (сверху)
-                    "value": item["desc"], # Текст с флагом посередине
-                    "inline": False
-                },
-                {
-                    "name": "\u200b",     # Второй разделитель (под текстом)
-                    "value": f"**[{item['title']}]({item['link']})**",  # Жирная ссылка внизу
-                    "inline": False
-                }
-            ]
-        }]
+        "flags": 32768,
+        "components": [
+            {
+                "type": 17,
+                "accent_color": 16618511,  # Оранжевая полоска слева из вашего шаблона
+                "spoiler": False,
+                "components": [
+                    {
+                        "type": 14  # Первый разделитель (сверху)
+                    },
+                    {
+                        "type": 10,  # Текст с флагом
+                        "content": f"{item['desc']}\n"
+                    },
+                    {
+                        "type": 14  # Второй разделитель (под флагом)
+                    },
+                    {
+                        "type": 10,  # Жирная ссылка внизу
+                        "content": f" **[{item['title']}]({item['link']})**"
+                    }
+                ]
+            }
+        ]
     }
     
     try:
