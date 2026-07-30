@@ -134,16 +134,16 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка сообщения с двумя картинками-разделителями"""
+    """Отправка сообщения: один флаг, красивое описание и картинки-разделители"""
     payload = {
         "embeds": [
             {
-                "color": 16618511,  # Фирменная оранжевая полоска слева
+                "color": 16618511,  # Оранжевая полоска слева
                 "description": (
-                    "https://cdn.discordapp.com/attachments/1108501100203622470/1532353905969598554/image.png\n\n"  # 1. Верхний разделитель
-                    f"🇰🇷 {item['desc']}\n\n"                                                                     # 2. Описание
-                    "https://cdn.discordapp.com/attachments/1108501100203622470/1532353905969598554/image.png\n\n"  # 3. Нижний разделитель
-                    f"**[{item['title']}]({item['link']})**"                                                     # 4. Название новости со ссылкой
+                    "![](https://cdn.discordapp.com/attachments/1108501100203622470/1532353905969598554/image.png)\n\n"  # Картинка-разделитель сверху (в виде Markdown)
+                    f"🇰🇷 {item['desc']}\n\n"                                                                     # Описание с одним флаг-эмодзи
+                    "![](https://cdn.discordapp.com/attachments/1108501100203622470/1532353905969598554/image.png)\n\n"  # Картинка-разделитель снизу
+                    f"**[{item['title']}]({item['link']})**"                                                     # Название новости со ссылкой
                 )
             }
         ]
