@@ -31,7 +31,7 @@ def parse_orbit_games(sent_ids):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en-US;q=0.7",
         "Cache-Control": "no-cache",
         "Pragma": "no-cache"
     }
@@ -127,16 +127,27 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка сообщения: заголовок-ссылка сверху, разделитель и футер снизу"""
+    """Отправка сообщения через структуру Containers (в стиле Discohook)"""
     payload = {
-        "embeds": [{
-            "title": item["title"],         # Синий кликабельный заголовок сверху
-            "url": item["link"],            # Ссылка для заголовка
-            "color": 16744192,              # Оранжевая полоска слева
-            "footer": {
-                "text": item["desc"]        # Текст с флагом в футере (автоматически создает линию над собой)
+        "components": [
+            {
+                "type": 17,  # Тип контейнера (Container)
+                "accent_color": 16744192,  # Оранжевая полоска слева
+                "components": [
+                    {
+                        "type": 10,  # Текстовый компонент (ссылка-заголовок)
+                        "content": f"[{item['title']}]({item['link']})"
+                    },
+                    {
+                        "type": 14  # Разделитель (Separator)
+                    },
+                    {
+                        "type": 10,  # Текстовый компонент (описание с флагом снизу)
+                        "content": item["desc"]
+                    }
+                ]
             }
-        }]
+        ]
     }
     
     try:
