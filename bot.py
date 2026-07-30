@@ -134,14 +134,27 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка красивых и стабильных Embed-сообщений в Discord"""
+    """Отправка сообщения через контейнеры Discord с разделителями (V2)"""
     payload = {
-        "embeds": [
+        "flags": 32768,  # Флаг для включения новых компонентов
+        "components": [
             {
-                "title": item["title"],
-                "url": item["link"],
-                "description": item["desc"],
-                "color": 16618511  # Фирменный цвет акцента
+                "type": 17,  # Контейнер
+                "accent_color": 16618511,  # Цветная полоска слева (оранжевая)
+                "spoiler": False,
+                "components": [
+                    {
+                        "type": 10,  # Текстовый блок (описание/статус)
+                        "content": item["desc"]
+                    },
+                    {
+                        "type": 14   # Горизонтальный разделитель
+                    },
+                    {
+                        "type": 10,  # Текстовый блок (заголовок со ссылкой)
+                        "content": f"**[{item['title']}]({item['link']})**"
+                    }
+                ]
             }
         ]
     }
