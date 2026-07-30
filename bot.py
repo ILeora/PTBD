@@ -28,8 +28,6 @@ def save_sent_ids(sent_ids):
 def parse_orbit_games(sent_ids):
     """Парсинг сайта Orbit Games с усиленной маскировкой от блокировок"""
     url = "https://orbit-games.com/category/black-desert/global-lab/"
-    
-    # Расширенные заголовки, чтобы прикинуться реальным браузером Chrome
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -40,7 +38,6 @@ def parse_orbit_games(sent_ids):
     new_items = []
     
     try:
-        # Используем сессию для стабильности соединения
         session = requests.Session()
         res = session.get(url, headers=headers, timeout=15)
         
@@ -68,8 +65,7 @@ def parse_orbit_games(sent_ids):
                     "title": title,
                     "link": link,
                     "guid": link,
-                    "source": "Orbit Games (Перевод)",
-                    "color": 16744192 # Оранжевый цвет
+                    "desc": "🇰🇷 Перевод от \"Орбита игр\""  # Текст для верхней части
                 })
     except Exception as e:
         print(f"[Orbit] Запрос заблокирован или недоступен: {e}")
@@ -107,14 +103,17 @@ def parse_pearl_abyss(sent_ids):
                 title = " ".join(title.split())
                 if not title:
                     continue
+                
+                # Принудительно добавляем [Updates], если его нет в заголовке
+                if not title.startswith("[Updates]"):
+                    title = f"[Updates] {title}"
                     
                 if link not in sent_ids:
                     new_items.append({
                         "title": title,
                         "link": link,
                         "guid": link,
-                        "source": "Pearl Abyss (Официальный Lab)",
-                        "color": 2424832 # Темно-красный цвет
+                        "desc": "🇰🇷 Вышло обновление"  # Текст для верхней части
                     })
     except Exception as e:
         print(f"[Pearl Abyss] Ошибка парсинга: {e}")
@@ -129,12 +128,13 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
+    """Отправка сообщения в новом формате (Текст сверху, ссылка снизу)"""
     payload = {
         "embeds": [{
-            "title": item["title"],
-            "url": item["link"],
-            "color": item["color"],
-            "footer": {"text": f"Источник: {item['source']}"}
+            "description": item["desc"],    # Флаг и описание уходят наверх
+            "title": item["title"],         # Название статьи
+            "url": item["link"],            # Ссылка делает название синим кликабельным линком
+            "color": 16744192               # Оранжевый цвет полоски (HEX #FF8000)
         }]
     }
     
@@ -165,7 +165,7 @@ def main():
     if all_new_stories:
         for story in all_new_stories:
             if story["guid"] not in sent_ids:
-                print(f"Новое событие [{story['source']}]: {story['title']}")
+                print(f"Новое событие: {story['title']}")
                 send_to_discord(story)
                 sent_ids.add(story["guid"])
                 time.sleep(2)
