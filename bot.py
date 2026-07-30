@@ -27,7 +27,7 @@ def save_sent_ids(sent_ids):
         json.dump(list(sent_ids), f, ensure_ascii=False, indent=4)
 
 def parse_orbit_games(sent_ids):
-    """Парсинг сайта Orbit Games с увеличенным таймаутом"""
+    """Парсинг сайта Orbit Games с обходом Cloudflare"""
     url = "https://orbit-games.com/category/black-desert/global-lab/"
     new_items = []
     
@@ -58,7 +58,7 @@ def parse_orbit_games(sent_ids):
                     "title": title,
                     "link": link,
                     "guid": link,
-                    "desc": "🇰🇷    Перевод от \"Орбита игр\""
+                    "desc": "🇰🇷 Перевод от \"Орбита игр\""
                 })
     except Exception as e:
         print(f"[Orbit] Запрос заблокирован или недоступен: {e}")
@@ -105,7 +105,7 @@ def parse_pearl_abyss(sent_ids):
                         "title": title,
                         "link": link,
                         "guid": link,
-                        "desc": "🇰🇷    Вышло обновление"
+                        "desc": "🇰🇷 Вышло обновление (Global Lab)"
                     })
     except Exception as e:
         print(f"[Pearl Abyss] Ошибка парсинга: {e}")
@@ -120,30 +120,14 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка через контейнеры Discord без запрещенного поля content"""
+    """Отправка красивых и стабильных Embed-сообщений в Discord"""
     payload = {
-        "flags": 32768,
-        "components": [
+        "embeds": [
             {
-                "type": 17,
-                "accent_color": 16618511,
-                "spoiler": False,
-                "components": [
-                    {
-                        "type": 14
-                    },
-                    {
-                        "type": 10,
-                        "content": f"{item['desc']}\n"
-                    },
-                    {
-                        "type": 14
-                    },
-                    {
-                        "type": 10,
-                        "content": f" **[{item['title']}]({item['link']})**"
-                    }
-                ]
+                "title": item["title"],
+                "url": item["link"],
+                "description": item["desc"],
+                "color": 16618511  # Фирменный цвет акцента
             }
         ]
     }
