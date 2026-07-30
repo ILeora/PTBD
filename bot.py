@@ -65,7 +65,7 @@ def parse_orbit_games(sent_ids):
                     "title": title,
                     "link": link,
                     "guid": link,
-                    "desc": "🇰🇷 Перевод от \"Орбита игр\""  # Текст для верхней части
+                    "desc": "🇰🇷 Перевод от \"Орбита игр\""
                 })
     except Exception as e:
         print(f"[Orbit] Запрос заблокирован или недоступен: {e}")
@@ -104,7 +104,6 @@ def parse_pearl_abyss(sent_ids):
                 if not title:
                     continue
                 
-                # Принудительно добавляем [Updates], если его нет в заголовке
                 if not title.startswith("[Updates]"):
                     title = f"[Updates] {title}"
                     
@@ -113,7 +112,7 @@ def parse_pearl_abyss(sent_ids):
                         "title": title,
                         "link": link,
                         "guid": link,
-                        "desc": "🇰🇷 Вышло обновление"  # Текст для верхней части
+                        "desc": "🇰🇷 Вышло обновление"
                     })
     except Exception as e:
         print(f"[Pearl Abyss] Ошибка парсинга: {e}")
@@ -128,13 +127,15 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка сообщения со ссылкой сверху, разделителем и описанием снизу"""
+    """Отправка сообщения: заголовок-ссылка сверху, разделитель и футер снизу"""
     payload = {
         "embeds": [{
             "title": item["title"],         # Синий кликабельный заголовок сверху
             "url": item["link"],            # Ссылка для заголовка
-            "description": f"\n{item['desc']}",  # Перенос строки создает ту самую аккуратную линию-разделитель в Discord
-            "color": 16744192               # Оранжевая полоска слева
+            "color": 16744192,              # Оранжевая полоска слева
+            "footer": {
+                "text": item["desc"]        # Текст с флагом в футере (автоматически создает линию над собой)
+            }
         }]
     }
     
