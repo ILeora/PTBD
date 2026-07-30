@@ -134,26 +134,41 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Финальный чистый вариант сообщения без ломающегося Markdown"""
+    """Отправка сообщения через Components V2 с разделителями и контейнером"""
+    # Ключевой параметр в URL для работы V2 через вебхук
+    webhook_url_v2 = f"{DISCORD_WEBHOOK_URL}?with_components=true"
+    
     payload = {
-        "embeds": [
+        "flags": 32768,  # Флаг IS_COMPONENTS_V2
+        "components": [
             {
-                "color": 16618511,  # Фирменная оранжевая полоска слева
-                "description": f"🇰🇷 Вышло обновление (Global Lab)\n\n**[{item['title']}]({item['link']})**",
-                "image": {
-                    "url": "https://cdn.discordapp.com/attachments/1108501100203622470/1532353905969598554/image.png"
-                }
+                "type": 17,  # Контейнер
+                "accent_color": 16618511,  # Оранжевая полоска слева
+                "spoiler": False,
+                "components": [
+                    {
+                        "type": 10,  # Текстовый блок (описание)
+                        "content": f"🇰🇷 {item['desc']}"
+                    },
+                    {
+                        "type": 14   # Горизонтальный разделитель
+                    },
+                    {
+                        "type": 10,  # Текстовый блок (ссылка на новость)
+                        "content": f"**[{item['title']}]({item['link']})**"
+                    }
+                ]
             }
         ]
     }
     
     try:
-        res = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
+        res = requests.post(webhook_url_v2, json=payload, timeout=10)
         if res.status_code == 429:
             retry_after = res.json().get("retry_after", 5)
             print(f"Рейт-лимит Discord. Ожидание {retry_after} сек...")
             time.sleep(retry_after)
-            requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
+            requests.post(webhook_url_v2, json=payload, timeout=10)
         elif res.status_code not in [200, 204]:
             print(f"Ошибка Discord API: {res.status_code} - {res.text}")
     except Exception as e:
