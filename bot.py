@@ -134,8 +134,7 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка сообщения через Components V2 с разделителями и контейнером"""
-    # Ключевой параметр в URL для работы V2 через вебхук
+    """Отправка сообщения через Components V2 с двумя разделителями"""
     webhook_url_v2 = f"{DISCORD_WEBHOOK_URL}?with_components=true"
     
     payload = {
@@ -147,11 +146,14 @@ def send_to_discord(item):
                 "spoiler": False,
                 "components": [
                     {
-                        "type": 10,  # Текстовый блок (описание)
-                        "content": f"🇰🇷 {item['desc']}"
+                        "type": 14   # Первый разделитель (над описанием)
                     },
                     {
-                        "type": 14   # Горизонтальный разделитель
+                        "type": 10,  # Текстовый блок (описание)
+                        "content": str(item["desc"])
+                    },
+                    {
+                        "type": 14   # Второй разделитель (под описанием)
                     },
                     {
                         "type": 10,  # Текстовый блок (ссылка на новость)
