@@ -127,9 +127,9 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка через контейнеры Discord с обязательным корневым полем content"""
+    """Отправка через контейнеры Discord с обходом проверки пустого сообщения"""
     payload = {
-        "content": "",
+        "content": "\u200b",  # Невидимый символ обходит ошибку пустого сообщения
         "flags": 32768,
         "components": [
             {
