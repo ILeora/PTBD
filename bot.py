@@ -3,6 +3,7 @@ import json
 import requests
 from bs4 import BeautifulSoup
 import time
+from curl_cffi import requests as cffi_requests
 
 DB_FILE = "sent_news.json"
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
@@ -26,20 +27,13 @@ def save_sent_ids(sent_ids):
         json.dump(list(sent_ids), f, ensure_ascii=False, indent=4)
 
 def parse_orbit_games(sent_ids):
-    """Парсинг сайта Orbit Games с усиленной маскировкой от блокировок"""
+    """Парсинг сайта Orbit Games с обходом Cloudflare через эмуляцию TLS-отпечатка"""
     url = "https://orbit-games.com/category/black-desert/global-lab/"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Cache-Control": "no-cache",
-        "Pragma": "no-cache"
-    }
     new_items = []
     
     try:
-        session = requests.Session()
-        res = session.get(url, headers=headers, timeout=15)
+        # Используем curl_cffi с имитацией браузера Chrome для обхода защиты
+        res = cffi_requests.get(url, impersonate="chrome120", timeout=15)
         
         if res.status_code != 200:
             print(f"[Orbit] Сайт вернул код ошибки: {res.status_code}")
@@ -106,7 +100,7 @@ def parse_pearl_abyss(sent_ids):
                 
                 if not title.startswith("[Updates]"):
                     title = f"[Updates] {title}"
-                    
+                
                 if link not in sent_ids:
                     new_items.append({
                         "title": title,
