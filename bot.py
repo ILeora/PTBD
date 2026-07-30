@@ -31,7 +31,7 @@ def parse_orbit_games(sent_ids):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en-US;q=0.7",
+        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
         "Cache-Control": "no-cache",
         "Pragma": "no-cache"
     }
@@ -127,27 +127,20 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка сообщения через структуру Containers (в стиле Discohook)"""
+    """Отправка через надежные поля эмбеда (title сверху, fields снизу с разделителем)"""
     payload = {
-        "components": [
-            {
-                "type": 17,  # Тип контейнера (Container)
-                "accent_color": 16744192,  # Оранжевая полоска слева
-                "components": [
-                    {
-                        "type": 10,  # Текстовый компонент (ссылка-заголовок)
-                        "content": f"[{item['title']}]({item['link']})"
-                    },
-                    {
-                        "type": 14  # Разделитель (Separator)
-                    },
-                    {
-                        "type": 10,  # Текстовый компонент (описание с флагом снизу)
-                        "content": item["desc"]
-                    }
-                ]
-            }
-        ]
+        "embeds": [{
+            "title": item["title"],     # Синяя кликабельная ссылка сверху
+            "url": item["link"],
+            "color": 16744192,          # Оранжевая полоска слева
+            "fields": [
+                {
+                    "name": "\u200b",     # Невидимый заголовок поля создает аккуратный разделитель
+                    "value": item["desc"], # Текст с флагом снизу
+                    "inline": False
+                }
+            ]
+        }]
     }
     
     try:
@@ -157,6 +150,8 @@ def send_to_discord(item):
             print(f"Рейт-лимит Discord. Ожидание {retry_after} сек...")
             time.sleep(retry_after)
             requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
+        elif res.status_code not in [200, 204]:
+            print(f"Ошибка Discord API: {res.status_code} - {res.text}")
     except Exception as e:
         print(f"Не удалось отправить в Discord: {e}")
 
