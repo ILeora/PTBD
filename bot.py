@@ -127,27 +127,28 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка через контейнеры Discord (тип 17) с физическими разделителями (тип 14)"""
+    """Отправка через контейнеры Discord с обязательным корневым полем content"""
     payload = {
+        "content": "",
         "flags": 32768,
         "components": [
             {
                 "type": 17,
-                "accent_color": 16618511,  # Оранжевая полоска слева из вашего шаблона
+                "accent_color": 16618511,
                 "spoiler": False,
                 "components": [
                     {
-                        "type": 14  # Первый разделитель (сверху)
+                        "type": 14
                     },
                     {
-                        "type": 10,  # Текст с флагом
+                        "type": 10,
                         "content": f"{item['desc']}\n"
                     },
                     {
-                        "type": 14  # Второй разделитель (под флагом)
+                        "type": 14
                     },
                     {
-                        "type": 10,  # Жирная ссылка внизу
+                        "type": 10,
                         "content": f" **[{item['title']}]({item['link']})**"
                     }
                 ]
