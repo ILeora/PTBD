@@ -27,7 +27,7 @@ def save_sent_ids(sent_ids):
         json.dump(list(sent_ids), f, ensure_ascii=False, indent=4)
 
 def parse_orbit_games(sent_ids):
-    """Парсинг сайта Orbit Games с защитой от тайм-аутов и повторными попытками"""
+    """Парсинг сайта Orbit Games с флагом России и защитой от тайм-аутов"""
     url = "https://orbit-games.com/category/black-desert/global-lab/"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -44,7 +44,6 @@ def parse_orbit_games(sent_ids):
     }
     new_items = []
     
-    # До 3 попыток запроса на случай временных лагов Cloudflare/хостинга
     for attempt in range(1, 4):
         try:
             res = cffi_requests.get(url, headers=headers, impersonate="chrome120", timeout=30)
@@ -74,7 +73,7 @@ def parse_orbit_games(sent_ids):
                         "title": title,
                         "link": link,
                         "guid": link,
-                        "desc": "🇰🇷 Перевод от \"Орбита игр\""
+                        "desc": ":flag_ru: Перевод от \"Орбита игр\""
                     })
             break
             
@@ -88,7 +87,7 @@ def parse_orbit_games(sent_ids):
     return new_items[::-1]
 
 def parse_pearl_abyss(sent_ids):
-    """Парсинг официального сайта Pearl Abyss Global Lab Notice"""
+    """Парсинг официального сайта Pearl Abyss Global Lab Notice (без Global Lab в описании)"""
     url = "https://blackdesert.pearlabyss.com/GlobalLab/en-US/News/Notice?_categoryNo=2"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     new_items = []
@@ -127,7 +126,7 @@ def parse_pearl_abyss(sent_ids):
                         "title": title,
                         "link": link,
                         "guid": link,
-                        "desc": "🇰🇷 Вышло обновление (Global Lab)"
+                        "desc": "🇰🇷 Вышло обновление"
                     })
     except Exception as e:
         print(f"[Pearl Abyss] Ошибка парсинга: {e}")
