@@ -99,42 +99,57 @@ def parse_pearl_abyss(sent_ids):
             return new_items
             
         soup = BeautifulSoup(res.text, "lxml")
-        list_container = soup.find("div", class_="board_list_block") or soup.find("ul", class_="news_list")
-        if not list_container:
-            links = soup.find_all("a", href=True)
-        else:
-            links = list_container.find_all("a", href=True)
+        
+        # Ищем все ссылки на новости
+        all_links = soup.find_all("a", href=True)
+        
+        for a_tag in all_links:
+            href = a_tag.get("href", "")
+            if "Detail?" not in href:
+                continue
+                
+            # Получаем полный URL
+            if not href.startswith("http"):
+                link = "https://blackdesert.pearlabyss.com" + href
+            else:
+                link = href
             
-        for a_tag in links:
-            if "Detail?" in a_tag["href"]:
-                link = a_tag["href"]
-                if not link.startswith("http"):
-                    link = "https://blackdesert.pearlabyss.com" + link
+            # Ищем заголовок
+            title_tag = a_tag.find("span", class_="title") or a_tag.find("p", class_="title")
+            if title_tag:
+                title = title_tag.text.strip()
+            else:
+                # Если не нашли title, берем весь текст ссылки
+                title = a_tag.text.strip()
+            
+            # Очищаем заголовок от лишних пробелов
+            title = " ".join(title.split())
+            
+            if not title:
+                continue
+            
+            # КРИТИЧНО: Пропускаем все новости, которые НЕ начинаются с "[Updates]"
+            if not title.startswith("[Updates]"):
+                print(f"[Pearl Abyss] Пропущена новость (не [Updates]): {title[:50]}...")
+                continue
+            
+            # Проверяем, не отправляли ли уже эту новость
+            if link not in sent_ids:
+                new_items.append({
+                    "title": title,
+                    "link": link,
+                    "guid": link,
+                    "desc": "🇰🇷 Вышло обновление Global Lab"
+                })
+                print(f"[Pearl Abyss] НОВОЕ ОБНОВЛЕНИЕ: {title}")
                 
-                title_tag = a_tag.find("span", class_="title") or a_tag.find("p", class_="title")
-                title = title_tag.text.strip() if title_tag else a_tag.text.strip()
-                
-                title = " ".join(title.split())
-                if not title:
-                    continue
-                
-                # Пропускаем всё, что не является основными патчами [Updates]
-                if not title.startswith("[Updates]"):
-                    continue
-                
-                if link not in sent_ids:
-                    new_items.append({
-                        "title": title,
-                        "link": link,
-                        "guid": link,
-                        "desc": "🇰🇷 Вышло обновление"
-                    })
     except Exception as e:
         print(f"[Pearl Abyss] Ошибка парсинга: {e}")
-        
+    
+    # Удаляем дубликаты (сохраняем порядок - новые сверху)
     seen = set()
     unique_items = []
-    for item in new_items[::-1]:
+    for item in new_items[::-1]:  # Реверсим, чтобы новые были первыми
         if item["guid"] not in seen:
             seen.add(item["guid"])
             unique_items.append(item)
