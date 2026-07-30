@@ -134,27 +134,17 @@ def parse_pearl_abyss(sent_ids):
     return unique_items
 
 def send_to_discord(item):
-    """Отправка сообщения через контейнеры Discord с разделителями (V2)"""
+    """Отправка сообщения в Discord с картинкой и ссылкой"""
     payload = {
-        "flags": 32768,
-        "components": [
+        "embeds": [
             {
-                "type": 17,
-                "accent_color": 16618511,
-                "spoiler": False,
-                "components": [
-                    {
-                        "type": 10,
-                        "content": str(item["desc"])
-                    },
-                    {
-                        "type": 14
-                    },
-                    {
-                        "type": 10,
-                        "content": f"**[{item['title']}]({item['link']})**"
-                    }
-                ]
+                "title": item["title"],
+                "url": item["link"],  # Заголовок становится кликабельной ссылкой
+                "description": item["desc"],
+                "color": 16618511,  # Фирменная оранжевая полоска слева
+                "image": {
+                    "url": "https://cdn.discordapp.com/attachments/1108501100203622470/1532353905969598554/image.png"  # Твоя картинка-баннер
+                }
             }
         ]
     }
