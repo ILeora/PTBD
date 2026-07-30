@@ -136,22 +136,22 @@ def parse_pearl_abyss(sent_ids):
 def send_to_discord(item):
     """Отправка сообщения через контейнеры Discord с разделителями (V2)"""
     payload = {
-        "flags": 32768,  # Флаг для включения новых компонентов
+        "flags": 32768,
         "components": [
             {
-                "type": 17,  # Контейнер
-                "accent_color": 16618511,  # Цветная полоска слева (оранжевая)
+                "type": 17,
+                "accent_color": 16618511,
                 "spoiler": False,
                 "components": [
                     {
-                        "type": 10,  # Текстовый блок (описание/статус)
-                        "content": item["desc"]
+                        "type": 10,
+                        "content": str(item["desc"])
                     },
                     {
-                        "type": 14   # Горизонтальный разделитель
+                        "type": 14
                     },
                     {
-                        "type": 10,  # Текстовый блок (заголовок со ссылкой)
+                        "type": 10,
                         "content": f"**[{item['title']}]({item['link']})**"
                     }
                 ]
