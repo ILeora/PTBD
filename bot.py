@@ -88,8 +88,8 @@ def parse_orbit_games(sent_ids):
 
 def parse_pearl_abyss(sent_ids):
     """
-    Парсинг ТОЛЬКО крупных содержательных патчей с официального сайта Pearl Abyss.
-    Используется комбинированный фильтр для отсеивания мелких новостей.
+    Парсинг ТОЛЬКО крупных патчей (ID >= 19000) с официального сайта Pearl Abyss.
+    Мелкие новости и объявления о безопасности (ID 13000-13393) игнорируются.
     """
     url = "https://blackdesert.pearlabyss.com/GlobalLab/en-US/News/Notice?_categoryNo=2"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
@@ -111,17 +111,20 @@ def parse_pearl_abyss(sent_ids):
             if "Detail?" not in href:
                 continue
             
-            # Получаем ID новости
+            # Получаем ID новости из URL
             board_no = href.split("_boardNo=")[-1].split("&")[0]
             
-            # 🔥 КРИТЕРИЙ 1: Фильтр по ID (крупные патчи обычно имеют ID >= 19000)
             try:
                 board_id = int(board_no)
-                if board_id < 19000:
-                    print(f"[Pearl Abyss] ⏭️ Пропущен патч (ID {board_id} < 19000)")
-                    continue
             except ValueError:
                 print(f"[Pearl Abyss] ⚠️ Не удалось распарсить ID: {board_no}")
+                continue
+            
+            # 🔥 ОСНОВНОЙ ФИЛЬТР: Только ID >= 19000 (крупные патчи)
+            if board_id < 19000:
+                # Для отладки показываем, что пропустили
+                if board_id >= 13000:
+                    print(f"[Pearl Abyss] ⏭️ Пропущена мелкая новость (ID {board_id})")
                 continue
             
             # Формируем полную ссылку
@@ -142,18 +145,7 @@ def parse_pearl_abyss(sent_ids):
             if not title:
                 continue
             
-            # 🔥 КРИТЕРИЙ 2: В названии должно быть слово "업데이트" (обновление)
-            if "업데이트" not in title:
-                print(f"[Pearl Abyss] ⏭️ Пропущено (нет '업데이트'): {title[:30]}...")
-                continue
-            
-            # 🔥 КРИТЕРИЙ 3: Исключаем новости о безопасности и мелкие объявления
-            exclude_keywords = ["보안", "모듈", "안내", "수정"]
-            if any(kw in title for kw in exclude_keywords):
-                print(f"[Pearl Abyss] ⏭️ Пропущено (содержит исключающее слово): {title[:30]}...")
-                continue
-            
-            # Если новость прошла все фильтры - добавляем
+            # Если новость прошла фильтр по ID - добавляем
             if link not in sent_ids:
                 new_items.append({
                     "title": title,
@@ -181,27 +173,17 @@ def send_to_discord(item):
     webhook_url_v2 = f"{DISCORD_WEBHOOK_URL}?with_components=true"
     
     payload = {
-        "flags": 32768,  # Флаг IS_COMPONENTS_V2
+        "flags": 32768,
         "components": [
             {
-                "type": 17,  # Контейнер
-                "accent_color": 16618511,  # Оранжевая полоска слева
+                "type": 17,
+                "accent_color": 16618511,
                 "spoiler": False,
                 "components": [
-                    {
-                        "type": 14   # Первый разделитель (над описанием)
-                    },
-                    {
-                        "type": 10,  # Текстовый блок (описание)
-                        "content": str(item["desc"])
-                    },
-                    {
-                        "type": 14   # Второй разделитель (под описанием)
-                    },
-                    {
-                        "type": 10,  # Текстовый блок (ссылка на новость)
-                        "content": f"**[{item['title']}]({item['link']})**"
-                    }
+                    {"type": 14},
+                    {"type": 10, "content": str(item["desc"])},
+                    {"type": 14},
+                    {"type": 10, "content": f"**[{item['title']}]({item['link']})**"}
                 ]
             }
         ]
