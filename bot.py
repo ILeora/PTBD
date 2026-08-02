@@ -68,6 +68,11 @@ def parse_orbit_games(sent_ids):
                 title = a_tag.text.strip()
                 link = a_tag["href"]
                 
+                # 🔥 ФИЛЬТР: Пропускаем англоязычные новости Orbit Games
+                if "/en/" in link:
+                    print(f"[Orbit] Пропущена англоязычная новость: {title}")
+                    continue
+                
                 if link not in sent_ids:
                     new_items.append({
                         "title": title,
