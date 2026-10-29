@@ -1,4 +1,4 @@
-import os
+import osм
 import json
 import requests
 from bs4 import BeautifulSoup
